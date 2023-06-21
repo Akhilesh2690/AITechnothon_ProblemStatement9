@@ -1,3 +1,4 @@
+using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
@@ -46,44 +47,60 @@ namespace AITechnothon_ProblemStatement9.Controllers
         [HttpGet("getfiles")]
         public async Task<IActionResult> GetFiles(string fileName)
         {
-            var client = new AmazonS3Client();
-            var request = new ListObjectsV2Request()
+            try
             {
-                BucketName = bucketName,
-                //Prefix = prefix
-            };
-            var response = await client.ListObjectsV2Async(request);
-            return Ok();
+                var client = new AmazonS3Client("AKIA5WAEWOPO3GQKB2F4", "WWCZ73PICuLKTx9hvSzQAVQbw+UAL6qXFAzHKunc", RegionEndpoint.APSouth1);
+                var request = new ListObjectsV2Request()
+                {
+                    BucketName = bucketName,
+                    //Prefix = prefix
+                };
+                var response = await client.ListObjectsV2Async(request);
+                return Ok();
+            }
+
+            catch(Exception ex)
+            {
+                throw;
+            }
+   
         }
 
         [HttpPost]
         public async Task UploadFile(IFormFile formFile)
         {
+            // var client = new AmazonS3Client();
 
-            var client = new AmazonS3Client();
-           // var client = new AmazonS3Client("ACCESS_KEY_ID", "SECRET_KEY_ID", RegionEndpoint.APSoutheast2);
-            var bucketExists = await AmazonS3Util.DoesS3BucketExistV2Async(client, bucketName);
-
-            if (!bucketExists)
+            try
             {
-                var bucketRequest = new PutBucketRequest()
+                var client = new AmazonS3Client("AKIA5WAEWOPO3GQKB2F4", "WWCZ73PICuLKTx9hvSzQAVQbw+UAL6qXFAzHKunc", RegionEndpoint.APSouth1);
+                var bucketExists = await AmazonS3Util.DoesS3BucketExistV2Async(client, bucketName);
+
+                if (!bucketExists)
+                {
+                    var bucketRequest = new PutBucketRequest()
+                    {
+                        BucketName = bucketName,
+                        UseClientRegion = true
+                    };
+                    await client.PutBucketAsync(bucketRequest);
+                }
+
+                var objectRequest = new PutObjectRequest()
                 {
                     BucketName = bucketName,
-                    UseClientRegion = true
+                    Key = $"{DateTime.Now:yyyyMMhhmmss} {formFile.FileName}",
+                    InputStream = formFile.OpenReadStream(),
+                    StorageClass = S3StorageClass.Standard
                 };
-                await client.PutBucketAsync(bucketRequest);
+                // objectRequest.Metadata.Add("test", "MetaData");
+
+                var response = await client.PutObjectAsync(objectRequest);
             }
-
-            var objectRequest = new PutObjectRequest()
+            catch (Exception ex)
             {
-                BucketName = bucketName,
-                Key = $"{DateTime.Now:yyyyMMhhmmss} {formFile.FileName}",
-                InputStream = formFile.OpenReadStream(),
-                StorageClass = S3StorageClass.Standard
-            };
-            // objectRequest.Metadata.Add("test", "MetaData");
-
-            var response = await client.PutObjectAsync(objectRequest);
+                throw ex;
+            }
         }
     }
 }
