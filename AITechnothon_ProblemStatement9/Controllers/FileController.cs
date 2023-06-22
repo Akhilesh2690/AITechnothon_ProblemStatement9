@@ -1,51 +1,28 @@
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Amazon.S3.Transfer;
 using Amazon.S3.Util;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AITechnothon_ProblemStatement9.Controllers
 {
-    [ApiController]
     [Route("[controller]")]
-    public class WeatherForecastController : ControllerBase
+    [ApiController]
+    public class FileController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
-        private readonly ILogger<WeatherForecastController> _logger;
-
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
-        {
-            _logger = logger;
-        }
-
         public string bucketName = "s3bucket-demo-test";
-
-        [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
-        {
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-            {
-                Date = DateTime.Now.AddDays(index),
-                TemperatureC = Random.Shared.Next(-20, 55),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-            })
-            .ToArray();
-        }
 
         [HttpGet("getfile")]
         public async Task<IActionResult> GetFile(string fileName)
         {
-            var client = new AmazonS3Client();
-            var response = await client.GetObjectAsync(bucketName, fileName);
-            return Ok(response);
+            var client = new AmazonS3Client("AKIA5WAEWOPO3GQKB2F4", "WWCZ73PICuLKTx9hvSzQAVQbw+UAL6qXFAzHKunc", RegionEndpoint.APSouth1);
+            var file = await client.GetObjectAsync(bucketName, fileName);
+            return File(file.ResponseStream, file.Headers.ContentType);
         }
 
         [HttpGet("getfiles")]
-        public async Task<IActionResult> GetFiles(string fileName)
+        public async Task<IActionResult> GetFiles(string prefix)
         {
             try
             {
@@ -53,24 +30,20 @@ namespace AITechnothon_ProblemStatement9.Controllers
                 var request = new ListObjectsV2Request()
                 {
                     BucketName = bucketName,
-                    //Prefix = prefix
+                    Prefix = prefix
                 };
                 var response = await client.ListObjectsV2Async(request);
                 return Ok();
             }
-
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw;
             }
-   
         }
 
-        [HttpPost]
+        [HttpPost("upload")]
         public async Task UploadFile(IFormFile formFile)
         {
-            // var client = new AmazonS3Client();
-
             try
             {
                 var client = new AmazonS3Client("AKIA5WAEWOPO3GQKB2F4", "WWCZ73PICuLKTx9hvSzQAVQbw+UAL6qXFAzHKunc", RegionEndpoint.APSouth1);
@@ -93,13 +66,48 @@ namespace AITechnothon_ProblemStatement9.Controllers
                     InputStream = formFile.OpenReadStream(),
                     StorageClass = S3StorageClass.Standard
                 };
-                // objectRequest.Metadata.Add("test", "MetaData");
 
                 var response = await client.PutObjectAsync(objectRequest);
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw;
+            }
+        }
+
+        [HttpGet("download")]
+        public async Task<IActionResult> DownloadFile(string fileName)
+        {
+            try
+            {
+                var client = new AmazonS3Client("AKIA5WAEWOPO3GQKB2F4", "WWCZ73PICuLKTx9hvSzQAVQbw+UAL6qXFAzHKunc", RegionEndpoint.APSouth1);
+                {
+                    var transferUtility = new TransferUtility(client);
+                    var response = await transferUtility.S3Client.GetObjectAsync(new GetObjectRequest()
+                    {
+                        BucketName = bucketName,
+                        Key = fileName
+                    });
+
+                    if (response.ResponseStream == null)
+                    {
+                        return NotFound();
+                    }
+                    return File(response.ResponseStream, response.Headers.ContentType, fileName);
+                }
+            }
+            catch (AmazonS3Exception amazonS3Exception)
+            {
+                if (amazonS3Exception.ErrorCode != null &&
+                       (amazonS3Exception.ErrorCode.Equals("InvalidAccessKeyId") ||
+                              amazonS3Exception.ErrorCode.Equals("InvalidSecurity")))
+                {
+                    throw new Exception("Please check the AWS Credentials.");
+                }
+                else
+                {
+                    throw new Exception(amazonS3Exception.Message);
+                }
             }
         }
     }
