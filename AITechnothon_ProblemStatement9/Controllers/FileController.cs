@@ -1,4 +1,6 @@
+using AITechnothon_ProblemStatement9.Models;
 using Amazon;
+using Amazon.DynamoDBv2.DataModel;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
@@ -11,6 +13,13 @@ namespace AITechnothon_ProblemStatement9.Controllers
     [ApiController]
     public class FileController : ControllerBase
     {
+        private readonly IDynamoDBContext _context;
+
+        public FileController(IDynamoDBContext context)
+        {
+            _context = context;
+        }
+
         public string bucketName = "s3bucket-demo-test";
 
         [HttpGet("getfile")]
@@ -46,6 +55,16 @@ namespace AITechnothon_ProblemStatement9.Controllers
         {
             try
             {
+                DocumentDetails doc = new DocumentDetails()
+                {
+                    ApplicationId = 2,
+                    ClientId = 2,
+                    FileName = formFile.FileName,
+                    CreationDate = DateTime.Now,
+                    DocumentId = 2,
+                };
+
+           //     await _context.SaveAsync(doc);
                 var client = new AmazonS3Client("AKIA5WAEWOPO3GQKB2F4", "WWCZ73PICuLKTx9hvSzQAVQbw+UAL6qXFAzHKunc", RegionEndpoint.APSouth1);
                 var bucketExists = await AmazonS3Util.DoesS3BucketExistV2Async(client, bucketName);
 
@@ -62,12 +81,12 @@ namespace AITechnothon_ProblemStatement9.Controllers
                 var objectRequest = new PutObjectRequest()
                 {
                     BucketName = bucketName,
-                    Key = $"{DateTime.Now:yyyyMMhhmmss} {formFile.FileName}",
+                    Key = formFile.FileName,
                     InputStream = formFile.OpenReadStream(),
                     StorageClass = S3StorageClass.Standard
                 };
 
-                var response = await client.PutObjectAsync(objectRequest);
+  //              var response = await client.PutObjectAsync(objectRequest);
             }
             catch (Exception ex)
             {
@@ -110,5 +129,7 @@ namespace AITechnothon_ProblemStatement9.Controllers
                 }
             }
         }
+
+       
     }
 }
