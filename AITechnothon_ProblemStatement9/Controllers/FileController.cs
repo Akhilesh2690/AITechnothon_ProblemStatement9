@@ -1,10 +1,12 @@
 using AITechnothon_ProblemStatement9.Models;
 using Amazon;
 using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Amazon.S3.Util;
+using AntiVirus;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AITechnothon_ProblemStatement9.Controllers
@@ -57,36 +59,55 @@ namespace AITechnothon_ProblemStatement9.Controllers
             {
                 DocumentDetails doc = new DocumentDetails()
                 {
-                    ApplicationId = 2,
+                    ApplicationId = 3,
                     ClientId = 2,
                     FileName = formFile.FileName,
                     CreationDate = DateTime.Now,
-                    DocumentId = 2,
+                    DocumentId = 3,
                 };
 
-           //     await _context.SaveAsync(doc);
-                var client = new AmazonS3Client("AKIA5WAEWOPO3GQKB2F4", "WWCZ73PICuLKTx9hvSzQAVQbw+UAL6qXFAzHKunc", RegionEndpoint.APSouth1);
-                var bucketExists = await AmazonS3Util.DoesS3BucketExistV2Async(client, bucketName);
+                //await _context.SaveAsync(doc);
 
-                if (!bucketExists)
+                var filesPath = Directory.GetCurrentDirectory() + "/Uploadfiles";
+                string filePath = Path.Combine(filesPath, formFile.FileName);
+                using (Stream fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    var bucketRequest = new PutBucketRequest()
+                    await formFile.CopyToAsync(fileStream);
+                }
+                var scanner = new AntiVirus.Scanner();
+                var result = scanner.ScanAndClean(filePath);
+
+                if (result == ScanResult.VirusNotFound)
+                {
+                    var client = new AmazonS3Client("AKIA5WAEWOPO3GQKB2F4", "WWCZ73PICuLKTx9hvSzQAVQbw+UAL6qXFAzHKunc", RegionEndpoint.APSouth1);
+                    var bucketExists = await AmazonS3Util.DoesS3BucketExistV2Async(client, bucketName);
+
+                    if (!bucketExists)
+                    {
+                        var bucketRequest = new PutBucketRequest()
+                        {
+                            BucketName = bucketName,
+                            UseClientRegion = true
+                        };
+                        await client.PutBucketAsync(bucketRequest);
+                    }
+
+                    var objectRequest = new PutObjectRequest()
                     {
                         BucketName = bucketName,
-                        UseClientRegion = true
+                        Key = formFile.FileName,
+                        InputStream = formFile.OpenReadStream(),
+                        StorageClass = S3StorageClass.Standard
                     };
-                    await client.PutBucketAsync(bucketRequest);
+
+                   // var response = await client.PutObjectAsync(objectRequest);
                 }
 
-                var objectRequest = new PutObjectRequest()
+                FileInfo file = new FileInfo(filePath);
+                if (file.Exists)
                 {
-                    BucketName = bucketName,
-                    Key = formFile.FileName,
-                    InputStream = formFile.OpenReadStream(),
-                    StorageClass = S3StorageClass.Standard
-                };
-
-  //              var response = await client.PutObjectAsync(objectRequest);
+                    file.Delete();
+                }
             }
             catch (Exception ex)
             {
@@ -130,6 +151,21 @@ namespace AITechnothon_ProblemStatement9.Controllers
             }
         }
 
-       
+        [HttpGet("{documentName}")]
+        public async Task<IActionResult> GetByDocument(string documentName)
+        {
+            List<ScanCondition> conditions = new List<ScanCondition>();
+            conditions.Add(new ScanCondition("FileName", ScanOperator.Contains, documentName));
+
+            var documents = await _context.ScanAsync<DocumentDetails>(
+
+               conditions
+               ).GetRemainingAsync();
+
+            if (documents == null)
+                return NotFound();
+
+            return Ok(documents);
+        }
     }
 }
