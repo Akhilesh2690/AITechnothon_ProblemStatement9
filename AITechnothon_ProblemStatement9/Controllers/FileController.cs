@@ -57,17 +57,6 @@ namespace AITechnothon_ProblemStatement9.Controllers
         {
             try
             {
-                DocumentDetails doc = new DocumentDetails()
-                {
-                    ApplicationId = 3,
-                    ClientId = 2,
-                    FileName = formFile.FileName,
-                    CreationDate = DateTime.Now,
-                    DocumentId = 3,
-                };
-
-                //await _context.SaveAsync(doc);
-
                 var filesPath = Directory.GetCurrentDirectory() + "/Uploadfiles";
                 string filePath = Path.Combine(filesPath, formFile.FileName);
                 using (Stream fileStream = new FileStream(filePath, FileMode.Create))
@@ -100,7 +89,35 @@ namespace AITechnothon_ProblemStatement9.Controllers
                         StorageClass = S3StorageClass.Standard
                     };
 
-                   // var response = await client.PutObjectAsync(objectRequest);
+                   var response = await client.PutObjectAsync(objectRequest);
+
+                    if (response != null && (int)response.HttpStatusCode == 200)
+                    {
+                        bool isRecordInsertedDynamoDB = true;
+                        try
+                        {
+                            Random rnd = new Random();
+                            DocumentDetails doc = new DocumentDetails()
+                            {
+                                ApplicationId = 3,
+                                ClientId = 2,
+                                FileName = formFile.FileName,
+                                CreationDate = DateTime.Now,
+                                //DocumentId = rnd.Next()
+                                DocumentId = 3
+                            };
+
+                            await _context.SaveAsync(doc);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Exception Occure while inserting record in DynamoDb{0} ",ex.Message);
+                        }
+                        if(!isRecordInsertedDynamoDB)
+                        {
+                            await client.DeleteObjectAsync(bucketName, formFile.FileName);
+                        }
+                    }
                 }
 
                 FileInfo file = new FileInfo(filePath);
@@ -116,10 +133,21 @@ namespace AITechnothon_ProblemStatement9.Controllers
         }
 
         [HttpGet("download")]
-        public async Task<IActionResult> DownloadFile(string fileName)
+        public async Task<IActionResult> DownloadFile(int documentId, string fileName)
         {
             try
             {
+                List<ScanCondition> conditions = new List<ScanCondition>();
+                conditions.Add(new ScanCondition("FileName", ScanOperator.Equal, fileName));
+                conditions.Add(new ScanCondition("DocumentId", ScanOperator.Equal, documentId));
+                var documents = await _context.ScanAsync<DocumentDetails>(
+
+                   conditions
+                   ).GetRemainingAsync();
+
+                if (documents == null || documents?.Count == 0)
+                    return NotFound();
+
                 var client = new AmazonS3Client("AKIA5WAEWOPO3GQKB2F4", "WWCZ73PICuLKTx9hvSzQAVQbw+UAL6qXFAzHKunc", RegionEndpoint.APSouth1);
                 {
                     var transferUtility = new TransferUtility(client);
@@ -152,11 +180,10 @@ namespace AITechnothon_ProblemStatement9.Controllers
         }
 
         [HttpGet("{documentName}")]
-        public async Task<IActionResult> GetByDocument(string documentName)
+        public async Task<IActionResult> GetSearchByDocumentName(string documentName)
         {
             List<ScanCondition> conditions = new List<ScanCondition>();
             conditions.Add(new ScanCondition("FileName", ScanOperator.Contains, documentName));
-
             var documents = await _context.ScanAsync<DocumentDetails>(
 
                conditions

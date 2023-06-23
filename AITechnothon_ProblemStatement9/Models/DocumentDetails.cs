@@ -5,7 +5,7 @@ namespace AITechnothon_ProblemStatement9.Models
     [DynamoDBTable("DocumentDetails")]
     public class DocumentDetails
     {
-        [DynamoDBHashKey("ApplicationId")]
+        [DynamoDBProperty("ApplicationId")]
         public int? ApplicationId { get; set; }
 
         [DynamoDBProperty("ClientId")]
@@ -17,7 +17,7 @@ namespace AITechnothon_ProblemStatement9.Models
         [DynamoDBProperty("CreationDate")]
         public DateTime CreationDate { get; set; }
 
-        [DynamoDBProperty("DocumentId")]
+        [DynamoDBHashKey("DocumentId")]
         public int? DocumentId { get; set; }
     }
 }
