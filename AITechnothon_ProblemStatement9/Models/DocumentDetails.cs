@@ -15,7 +15,7 @@ namespace AITechnothon_ProblemStatement9.Models
         public string? FileName { get; set; }
 
         [DynamoDBProperty("CreationDate")]
-        public DateTime CreationDate { get; set; }
+        public string? CreationDate { get; set; }
 
         [DynamoDBHashKey("DocumentId")]
         public int? DocumentId { get; set; }

@@ -1,8 +1,11 @@
-﻿using Amazon;
+﻿using AITechnothon_ProblemStatement9.Domain;
+using AITechnothon_ProblemStatement9.Repository;
+using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 
 namespace AITechnothon_ProblemStatement9
@@ -10,6 +13,7 @@ namespace AITechnothon_ProblemStatement9
     public class Startup
     {
         public IConfiguration Configuration { get; set; }
+        private readonly string _policyName = "CorsPolicy";
 
         public Startup(IConfiguration configuration)
         {
@@ -20,7 +24,22 @@ namespace AITechnothon_ProblemStatement9
         {
             // Add services to the container.
 
-            services.AddControllers();
+            services.AddCors(opt =>
+            {
+                opt.AddPolicy(name: _policyName, builder =>
+                {
+                    builder.AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
+
+            //services.AddControllers();
+            services.AddControllers(opt =>
+            {
+                opt.AllowEmptyInputInBodyModelBinding = true;
+                
+            });
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             services.AddEndpointsApiExplorer();
@@ -39,6 +58,9 @@ namespace AITechnothon_ProblemStatement9
             var client = new AmazonDynamoDBClient(credentials, config);
             services.AddSingleton<IAmazonDynamoDB>(client);
             services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
+            services.AddScoped<IS3ClientRepository, S3ClientRepository>();
+            services.AddScoped<IDynamoClientRepository, DynamoClientRepository>();
+            services.AddScoped<IFileScanner, FileScanner>();
         }
 
         public void Configure(IApplicationBuilder app, IHostEnvironment env)
@@ -48,6 +70,7 @@ namespace AITechnothon_ProblemStatement9
             app.UseSwaggerUI();
             app.UseHttpsRedirection();
             app.UseRouting();
+            app.UseCors(_policyName);
 
             app.UseAuthorization();
             app.UseExceptionHandler(appError =>
