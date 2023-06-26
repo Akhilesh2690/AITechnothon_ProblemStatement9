@@ -19,5 +19,8 @@ namespace AITechnothon_ProblemStatement9.Models
 
         [DynamoDBHashKey("DocumentId")]
         public int? DocumentId { get; set; }
+
+        [DynamoDBProperty("Description")]
+        public string? Description { get; set; }
     }
 }

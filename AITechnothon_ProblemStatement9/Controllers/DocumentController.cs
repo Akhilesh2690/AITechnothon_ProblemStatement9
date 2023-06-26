@@ -18,7 +18,7 @@ namespace AITechnothon_ProblemStatement9.Controllers
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFileAsync(IFormFile formFile)
+        public async Task<IActionResult> UploadFileAsync(IFormFile formFile,string description="")
         {
             bool isFileUploaded = false;
             var isRecordInsertedDynamoDB = false;
@@ -27,7 +27,7 @@ namespace AITechnothon_ProblemStatement9.Controllers
             isFileUploaded = await _s3ClientRepository.UploadFileAsync(formFile);
             if (isFileUploaded)
             {
-                (isRecordInsertedDynamoDB, docId) = await _dynamoClientRepository.SaveRecordDyanmoDB(formFile.FileName);
+                (isRecordInsertedDynamoDB, docId) = await _dynamoClientRepository.SaveRecordDyanmoDB(formFile.FileName,description);
                 if (!isRecordInsertedDynamoDB)
                 {
                     await _s3ClientRepository.DeleteFileAsync(formFile.FileName);
@@ -40,7 +40,7 @@ namespace AITechnothon_ProblemStatement9.Controllers
             else
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    "Error occured whlile uploading document on S3Client or inserting data into DynamoDB. Please check the logs");
+                    $"Error occured whlile uploading {formFile.FileName} document on S3Client or inserting data into DynamoDB. Please check the logs");
             }
         }
 

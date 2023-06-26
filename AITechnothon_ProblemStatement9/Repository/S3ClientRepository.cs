@@ -1,25 +1,28 @@
 ﻿using AITechnothon_ProblemStatement9.Domain;
+using AITechnothon_ProblemStatement9.Options;
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Amazon.S3.Util;
 using AntiVirus;
+using Microsoft.Extensions.Options;
 
 namespace AITechnothon_ProblemStatement9.Repository
 {
     public class S3ClientRepository : IS3ClientRepository
     {
-        private readonly string AWSAccessKey = "AKIA5WAEWOPO3GQKB2F4";
-        private readonly string AWSSecretKey = "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";
-        private readonly string bucketName = "s3bucket-demo-test";
+        private readonly string? bucketName;
         private string uploadfilePath = Directory.GetCurrentDirectory() + "/Uploadfiles";
         private AmazonS3Client client;
         private readonly IFileScanner _fileScanner;
+        private AWSDetailsOptions? _aWSOptions;
 
-        public S3ClientRepository(IFileScanner fileScanner)
+        public S3ClientRepository(IFileScanner fileScanner, IOptions<AWSDetailsOptions> awsOptions)
         {
-            client = new AmazonS3Client(AWSAccessKey, AWSSecretKey, RegionEndpoint.APSouth1);
+            _aWSOptions = awsOptions?.Value;
+            client = new AmazonS3Client(_aWSOptions?.s3ClientDetails?.AWSAccessKey, _aWSOptions?.s3ClientDetails?.AWSSecretKey, RegionEndpoint.APSouth1);
+            bucketName = _aWSOptions?.s3ClientDetails?.BucketName;
             _fileScanner = fileScanner;
         }
 

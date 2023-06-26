@@ -1,19 +1,23 @@
 ﻿using AITechnothon_ProblemStatement9.Domain;
 using AITechnothon_ProblemStatement9.Models;
+using AITechnothon_ProblemStatement9.Options;
 using Amazon.Auth.AccessControlPolicy.ActionIdentifiers;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.S3;
+using Microsoft.Extensions.Options;
 
 namespace AITechnothon_ProblemStatement9.Repository
 {
     public class DynamoClientRepository : IDynamoClientRepository
     {
         private readonly IDynamoDBContext _context;
+        private readonly AppDetailsOptions _appDetailsOptions;
 
-        public DynamoClientRepository(IDynamoDBContext context)
+        public DynamoClientRepository(IDynamoDBContext context, IOptions<AppDetailsOptions> appDetailsOptions)
         {
             _context = context;
+            _appDetailsOptions = appDetailsOptions.Value;
         }
 
         public async Task<List<DocumentDetails>> GetDocumentDetails(int documentId = 0, int clientId = 0, string documentName = "" , bool isSearchByFileNameContains = false)
@@ -68,7 +72,7 @@ namespace AITechnothon_ProblemStatement9.Repository
             }
         }
 
-        public async Task<(bool, int)> SaveRecordDyanmoDB(string fileName)
+        public async Task<(bool, int)> SaveRecordDyanmoDB(string fileName,string description)
         {
            
             bool isRecordInsertedDynamoDB = false;
@@ -78,11 +82,12 @@ namespace AITechnothon_ProblemStatement9.Repository
             {
                 DocumentDetails doc = new DocumentDetails()
                 {
-                    ApplicationId = 3,
-                    ClientId = 2,
+                    ApplicationId = _appDetailsOptions.ApplicationId,
+                    ClientId = _appDetailsOptions.ClientId,
                     FileName = fileName,
                     CreationDate = DateTime.Now.ToString(),
-                    DocumentId = docId
+                    DocumentId = docId,
+                    Description= description
                 };
 
                 await _context.SaveAsync(doc);

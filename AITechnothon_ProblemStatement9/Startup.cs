@@ -5,7 +5,6 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.Runtime;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 
 namespace AITechnothon_ProblemStatement9
@@ -34,12 +33,7 @@ namespace AITechnothon_ProblemStatement9
                 });
             });
 
-            //services.AddControllers();
-            services.AddControllers(opt =>
-            {
-                opt.AllowEmptyInputInBodyModelBinding = true;
-                
-            });
+            services.AddControllers();
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             services.AddEndpointsApiExplorer();

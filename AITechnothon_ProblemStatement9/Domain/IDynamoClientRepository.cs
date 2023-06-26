@@ -4,8 +4,8 @@ namespace AITechnothon_ProblemStatement9.Domain
 {
     public interface IDynamoClientRepository
     {
-        Task<(bool, int)> SaveRecordDyanmoDB(string fileName);
+        Task<(bool, int)> SaveRecordDyanmoDB(string fileName, string description);
 
-        Task<List<DocumentDetails>> GetDocumentDetails(int documentId, int clientId, string documentName,bool isSearchByFileNameContains = false);
+        Task<List<DocumentDetails>> GetDocumentDetails(int documentId, int clientId, string documentName, bool isSearchByFileNameContains = false);
     }
 }

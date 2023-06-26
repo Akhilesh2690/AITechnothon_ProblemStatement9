@@ -1,8 +1,11 @@
-﻿namespace AITechnothon_ProblemStatement9.Extensions
+﻿using AITechnothon_ProblemStatement9.Options;
+
+namespace AITechnothon_ProblemStatement9.Extensions
 {
     public static class AddAppsettings
     {
-        private const string CopyFromFromAWSSection = "adhoc:aws";
+        private const string CopyFromAppDetails= "AppDetails";
+        private const string CopyFromAWSDetails = "AwsDetails";
 
         public static IWebHostBuilder AddAppSettings(this IWebHostBuilder builder)
         {
@@ -10,24 +13,17 @@
                 .ConfigureAppConfiguration((hostingconContext, configBuilder) =>
                 {
                     var config = configBuilder.Build();
-                    if (config["apm"] == null && hostingconContext.HostingEnvironment.EnvironmentName.Equals("Development"))
+                    if (!hostingconContext.HostingEnvironment.EnvironmentName.Equals("Development"))
                     {
-                        configBuilder.AddJsonFile("appsettings.json");
+                        configBuilder.AddJsonFile($"appsettings.{hostingconContext.HostingEnvironment.EnvironmentName}.json");
                         config = configBuilder.Build();
                     }
-
-                    var configDict = config
-                    .GetSection($"{CopyFromFromAWSSection}")
-                    .AsEnumerable(true)
-                    .ToDictionary(item => item.Key, item => item.Value);
-
-                    configBuilder.AddInMemoryCollection(configDict);
-
                     configBuilder.AddEnvironmentVariables();
                 })
                 .ConfigureServices((context, services) =>
                 {
-                    //services.Configure<AWSOptions>(context.Configuration.GetSection(CopyFromFromAWSSection));
+                    services.Configure<AppDetailsOptions>(context.Configuration.GetSection(CopyFromAppDetails));
+                    services.Configure<AWSDetailsOptions>(context.Configuration.GetSection(CopyFromAWSDetails));
                 });
             return builder;
         }
