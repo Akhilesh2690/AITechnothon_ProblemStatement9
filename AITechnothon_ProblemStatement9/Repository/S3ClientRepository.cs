@@ -1,5 +1,6 @@
 ﻿using AITechnothon_ProblemStatement9.Domain;
 using AITechnothon_ProblemStatement9.Options;
+using AITechnothon_ProblemStatement9.Utilities;
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -21,7 +22,8 @@ namespace AITechnothon_ProblemStatement9.Repository
         public S3ClientRepository(IFileScanner fileScanner, IOptions<AWSDetailsOptions> awsOptions)
         {
             _aWSOptions = awsOptions?.Value;
-            client = new AmazonS3Client(_aWSOptions?.s3ClientDetails?.AWSAccessKey, _aWSOptions?.s3ClientDetails?.AWSSecretKey, RegionEndpoint.APSouth1);
+            client = new AmazonS3Client(_aWSOptions?.s3ClientDetails?.AWSAccessKey, _aWSOptions?.s3ClientDetails?.AWSSecretKey,
+            RegionDetails.GetRegionEndpoint(_aWSOptions?.s3ClientDetails?.Region));
             bucketName = _aWSOptions?.s3ClientDetails?.BucketName;
             _fileScanner = fileScanner;
         }
@@ -97,7 +99,7 @@ namespace AITechnothon_ProblemStatement9.Repository
                         isSaveSuccess = true;
                     }
                 }
-                else if(result == ScanResult.VirusFound)
+                else if (result == ScanResult.VirusFound)
                 {
                     isVirusFound = true;
                 }

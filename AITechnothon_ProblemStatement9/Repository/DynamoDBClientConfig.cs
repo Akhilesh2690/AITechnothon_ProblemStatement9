@@ -1,8 +1,10 @@
 ﻿using AITechnothon_ProblemStatement9.Domain;
 using AITechnothon_ProblemStatement9.Models;
 using AITechnothon_ProblemStatement9.Options;
+using AITechnothon_ProblemStatement9.Utilities;
 using Amazon;
 using Amazon.DynamoDBv2;
+using Amazon.Extensions.NETCore.Setup;
 using Amazon.Runtime;
 using Microsoft.Extensions.Options;
 
@@ -18,7 +20,7 @@ namespace AITechnothon_ProblemStatement9.Repository
             var credentials = new BasicAWSCredentials(_dynamoDBClientDetails?.AWSAccessKey, _dynamoDBClientDetails?.AWSSecretKey);
             var config = new AmazonDynamoDBConfig()
             {
-                RegionEndpoint = RegionEndpoint.APSouth1
+                RegionEndpoint = RegionDetails.GetRegionEndpoint(_dynamoDBClientDetails?.Region)
             };
             _client = new AmazonDynamoDBClient(credentials, config);
         }
