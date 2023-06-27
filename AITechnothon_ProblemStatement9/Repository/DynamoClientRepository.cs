@@ -19,7 +19,7 @@ namespace AITechnothon_ProblemStatement9.Repository
             _appDetailsOptions = appDetailsOptions.Value;
         }
 
-        public async Task<List<DocumentDetails>> GetDocumentDetails(int documentId = 0, int clientId = 0, string documentName = "" , bool isSearchByFileNameContains = false)
+        public async Task<List<DocumentDetails>> GetDocumentDetails(int documentId = 0, int applicationId = 0, int clientId = 0, string documentName = "" , bool isSearchByFileNameContains = false)
         {
             try
             {
@@ -27,6 +27,10 @@ namespace AITechnothon_ProblemStatement9.Repository
                 if (documentId > 0)
                 {
                     conditions.Add(new ScanCondition("DocumentId", ScanOperator.Equal, documentId));
+                }
+                if (applicationId > 0)
+                {
+                    conditions.Add(new ScanCondition("ApplicationId", ScanOperator.Equal, applicationId));
                 }
                 if (clientId > 0)
                 {
@@ -46,23 +50,10 @@ namespace AITechnothon_ProblemStatement9.Repository
                 }
 
                 var documents = await _context.ScanAsync<DocumentDetails>(
-
                    conditions
                    ).GetRemainingAsync();
+
                 return documents;
-            }
-            catch (AmazonS3Exception amazonS3Exception)
-            {
-                if (amazonS3Exception.ErrorCode != null &&
-                       (amazonS3Exception.ErrorCode.Equals("InvalidAccessKeyId") ||
-                              amazonS3Exception.ErrorCode.Equals("InvalidSecurity")))
-                {
-                    throw new Exception("Please check the AWS Credentials.");
-                }
-                else
-                {
-                    throw new Exception(amazonS3Exception.Message);
-                }
             }
             catch (Exception ex)
             {
@@ -71,12 +62,16 @@ namespace AITechnothon_ProblemStatement9.Repository
             }
         }
 
-        public async Task<(bool, int)> SaveRecordDyanmoDB(string fileName,string description)
+        public async Task<(bool, int)> SaveRecordDyanmoDB(string fileName, string description, int documentId = 0)
         {
            
             bool isRecordInsertedDynamoDB = false;
-            Random rnd = new Random();
-            int docId = rnd.Next();
+            if(documentId == 0)
+            {
+                Random rnd = new Random();
+                documentId = rnd.Next();
+            }
+            
             try
             {
                 DocumentDetails doc = new DocumentDetails()
@@ -85,13 +80,13 @@ namespace AITechnothon_ProblemStatement9.Repository
                     ClientId = _appDetailsOptions.ClientId,
                     FileName = fileName,
                     CreationDate = DateTime.Now.ToString(),
-                    DocumentId = docId,
+                    DocumentId = documentId,
                     Description= description
                 };
 
                 await _context.SaveAsync(doc);
                 isRecordInsertedDynamoDB = true;
-                return (isRecordInsertedDynamoDB, docId);
+                return (isRecordInsertedDynamoDB, documentId);
             }
             catch (Exception ex)
             {

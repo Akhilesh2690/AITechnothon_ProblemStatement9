@@ -59,9 +59,10 @@ namespace AITechnothon_ProblemStatement9.Repository
             }
         }
 
-        public async Task<bool> UploadFileAsync(IFormFile formFile)
+        public async Task<(bool, bool)> UploadFileAsync(IFormFile formFile)
         {
             bool isSaveSuccess = false;
+            bool isVirusFound = false; ;
             try
             {
                 await UploadFile(formFile);
@@ -95,16 +96,19 @@ namespace AITechnothon_ProblemStatement9.Repository
                     {
                         isSaveSuccess = true;
                     }
-                    DeleteFile(formFile.FileName);
-                    return isSaveSuccess;
                 }
+                else if(result == ScanResult.VirusFound)
+                {
+                    isVirusFound = true;
+                }
+                DeleteFile(formFile.FileName);
 
-                return isSaveSuccess;
+                return (isSaveSuccess, isVirusFound);
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Exception occured in S3ClientRepository.UploadFileAsync: " + ex.Message);
-                return isSaveSuccess;
+                return (isSaveSuccess, isVirusFound); ;
             }
         }
 

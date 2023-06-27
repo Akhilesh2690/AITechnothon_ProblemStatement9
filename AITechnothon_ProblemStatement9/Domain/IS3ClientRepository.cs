@@ -6,7 +6,7 @@ namespace AITechnothon_ProblemStatement9.Domain
     {
         Task<GetObjectResponse> GetS3ClientDocument(string fileName);
 
-        Task<bool> UploadFileAsync(IFormFile file);
+        Task<(bool, bool)> UploadFileAsync(IFormFile file);
 
         Task<bool> DeleteFileAsync(string fileName);
     }

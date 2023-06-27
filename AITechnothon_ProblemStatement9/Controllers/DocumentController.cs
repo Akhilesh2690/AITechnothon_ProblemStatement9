@@ -1,6 +1,8 @@
 using AITechnothon_ProblemStatement9.Domain;
+using AITechnothon_ProblemStatement9.Options;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace AITechnothon_ProblemStatement9.Controllers
 {
@@ -10,37 +12,62 @@ namespace AITechnothon_ProblemStatement9.Controllers
     {
         private readonly IS3ClientRepository _s3ClientRepository;
         private readonly IDynamoClientRepository _dynamoClientRepository;
+        private readonly AppDetailsOptions _appDetailsOptions;
 
-        public DocumentController(IS3ClientRepository s3ClientRepository, IDynamoClientRepository dynamoClientRepository)
+        public DocumentController(IS3ClientRepository s3ClientRepository, IDynamoClientRepository dynamoClientRepository, IOptions<AppDetailsOptions> appDetailsOptions)
         {
             _s3ClientRepository = s3ClientRepository;
             _dynamoClientRepository = dynamoClientRepository;
+            _appDetailsOptions = appDetailsOptions.Value;
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFileAsync(IFormFile formFile,string description="")
+        public async Task<IActionResult> UploadFileAsync(IFormFile formFile, string description = "")
         {
             bool isFileUploaded = false;
+            bool isVirusFound = false;
             var isRecordInsertedDynamoDB = false;
             int docId = 0;
+            if (formFile?.FileName != null)
+            {
+                (isFileUploaded, isVirusFound) = await _s3ClientRepository.UploadFileAsync(formFile);
 
-            isFileUploaded = await _s3ClientRepository.UploadFileAsync(formFile);
-            if (isFileUploaded)
-            {
-                (isRecordInsertedDynamoDB, docId) = await _dynamoClientRepository.SaveRecordDyanmoDB(formFile.FileName,description);
-                if (!isRecordInsertedDynamoDB)
+                if (isVirusFound)
                 {
-                    await _s3ClientRepository.DeleteFileAsync(formFile.FileName);
+                    return StatusCode(StatusCodes.Status502BadGateway, $"{formFile.FileName} affetced by virus");
                 }
-            }
-            if (isFileUploaded && isRecordInsertedDynamoDB)
-            {
-                return Ok($"Document with documentId {docId} uploaded on S3Client bucket & meatadata inserted in DynamoDb successfully");
+
+                if (isFileUploaded)
+                {
+                    var documents = await _dynamoClientRepository.GetDocumentDetails(0, _appDetailsOptions.ApplicationId, _appDetailsOptions.ClientId,
+                    formFile.FileName, false);
+                    int documentId = 0;
+                    int existingDocId = Convert.ToInt32(documents?.FirstOrDefault()?.DocumentId);
+
+                    if (existingDocId > 0)
+                    {
+                        documentId = existingDocId;
+                    }
+                    (isRecordInsertedDynamoDB, docId) = await _dynamoClientRepository.SaveRecordDyanmoDB(formFile.FileName, description,
+                        documentId);
+                    if (!isRecordInsertedDynamoDB)
+                    {
+                        await _s3ClientRepository.DeleteFileAsync(formFile.FileName);
+                    }
+                }
+                if (isFileUploaded && isRecordInsertedDynamoDB)
+                {
+                    return Ok($"Document with documentId {docId} uploaded on S3Client bucket & meatadata inserted in DynamoDb successfully");
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError,
+                        $"Error occured whlile uploading {formFile.FileName} document on S3Client or inserting data into DynamoDB. Please check the logs");
+                }
             }
             else
             {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    $"Error occured whlile uploading {formFile.FileName} document on S3Client or inserting data into DynamoDB. Please check the logs");
+                return BadRequest("Please upload valid file.");
             }
         }
 
@@ -49,10 +76,11 @@ namespace AITechnothon_ProblemStatement9.Controllers
         {
             try
             {
-                var documents = await _dynamoClientRepository.GetDocumentDetails(documentId, 0, fileName);
+                var documents = await _dynamoClientRepository.GetDocumentDetails(documentId, _appDetailsOptions.ApplicationId,
+                    _appDetailsOptions.ClientId, fileName);
 
                 if (documents == null || documents?.Count == 0)
-                    return NotFound();
+                    return NotFound($"Document with documentId: {documentId} and filename: {fileName} not found");
 
                 var response = await _s3ClientRepository.GetS3ClientDocument(fileName);
 
@@ -65,7 +93,7 @@ namespace AITechnothon_ProblemStatement9.Controllers
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    $"Exception occured in DownloadFile file for documentId {documentId} fileName {fileName}.: {ex.Message}");
+                    $"Exception occured while downloading file for documentId {documentId} fileName {fileName}.: {ex.Message}");
             }
         }
 
@@ -74,7 +102,7 @@ namespace AITechnothon_ProblemStatement9.Controllers
         {
             try
             {
-                var documents = await _dynamoClientRepository.GetDocumentDetails(applicationId, clientId, documentName, true);
+                var documents = await _dynamoClientRepository.GetDocumentDetails(0, applicationId, clientId, documentName, true);
 
                 if (documents?.Count == 0)
                     return NotFound();
