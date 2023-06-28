@@ -2,9 +2,7 @@
 using AITechnothon_ProblemStatement9.Models;
 using AITechnothon_ProblemStatement9.Options;
 using AITechnothon_ProblemStatement9.Utilities;
-using Amazon;
 using Amazon.DynamoDBv2;
-using Amazon.Extensions.NETCore.Setup;
 using Amazon.Runtime;
 using Microsoft.Extensions.Options;
 
@@ -14,6 +12,7 @@ namespace AITechnothon_ProblemStatement9.Repository
     {
         private readonly AmazonDynamoDBClient _client;
         private DynamoDBClientDetails? _dynamoDBClientDetails;
+
         public DynamoDBClientConfig(IOptions<AWSDetailsOptions> aWSDetailsOptions)
         {
             _dynamoDBClientDetails = aWSDetailsOptions.Value?.dynamoDBClientDetails;
@@ -25,6 +24,10 @@ namespace AITechnothon_ProblemStatement9.Repository
             _client = new AmazonDynamoDBClient(credentials, config);
         }
 
+        /// <summary>
+        /// Get client configuration details
+        /// </summary>
+        /// <returns></returns>
         public AmazonDynamoDBClient GetDynamoDBClient()
         {
             return _client;

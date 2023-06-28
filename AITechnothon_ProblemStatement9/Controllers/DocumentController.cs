@@ -25,6 +25,12 @@ namespace AITechnothon_ProblemStatement9.Controllers
             _documentMapper = documentMapper;
         }
 
+        /// <summary>
+        /// Upload file in S3 client bucket and metadata in DynamoDb
+        /// </summary>
+        /// <param name="formFile"></param>
+        /// <param name="description"></param>
+        /// <returns></returns>
         [HttpPost("upload")]
         public async Task<IActionResult> UploadFileAsync(IFormFile formFile, string description = "")
         {
@@ -73,6 +79,12 @@ namespace AITechnothon_ProblemStatement9.Controllers
             }
         }
 
+        /// <summary>
+        /// Download file from S3 client bucket
+        /// </summary>
+        /// <param name="documentId"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<IActionResult> DownloadFile(int documentId, string fileName)
         {
@@ -99,6 +111,13 @@ namespace AITechnothon_ProblemStatement9.Controllers
             }
         }
 
+        /// <summary>
+        /// Search documment details in dynamoDb
+        /// </summary>
+        /// <param name="documentName"></param>
+        /// <param name="applicationId"></param>
+        /// <param name="clientId"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<IActionResult> GetSearchByDocumentName(string documentName = "", int applicationId = 0, int clientId = 0)
         {

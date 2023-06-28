@@ -5,6 +5,11 @@ namespace AITechnothon_ProblemStatement9.Repository
 {
     public class FileScanner : IFileScanner
     {
+        /// <summary>
+        /// Scanning the uploaded file
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         public ScanResult ScanFile(string filePath)
         {
             var scanner = new AntiVirus.Scanner();
@@ -13,4 +18,3 @@ namespace AITechnothon_ProblemStatement9.Repository
         }
     }
 }
- 

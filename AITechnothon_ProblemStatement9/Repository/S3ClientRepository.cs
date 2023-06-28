@@ -1,13 +1,11 @@
 ﻿using AITechnothon_ProblemStatement9.Domain;
 using AITechnothon_ProblemStatement9.Options;
 using AITechnothon_ProblemStatement9.Utilities;
-using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Amazon.S3.Util;
 using AntiVirus;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace AITechnothon_ProblemStatement9.Repository
@@ -29,6 +27,12 @@ namespace AITechnothon_ProblemStatement9.Repository
             _fileScanner = fileScanner;
         }
 
+        /// <summary>
+        /// Get file from S3 client
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<GetObjectResponse> GetS3ClientDocument(string fileName)
         {
             try
@@ -62,6 +66,11 @@ namespace AITechnothon_ProblemStatement9.Repository
             }
         }
 
+        /// <summary>
+        /// Get PreSigned Url
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         public string GetPreSignedUrl(string fileName)
         {
             GetPreSignedUrlRequest preSignedUrlRequest = new GetPreSignedUrlRequest
@@ -71,9 +80,14 @@ namespace AITechnothon_ProblemStatement9.Repository
                 Expires = DateTime.UtcNow.AddDays(1)
             };
 
-           return client.GetPreSignedURL(preSignedUrlRequest);
+            return client.GetPreSignedURL(preSignedUrlRequest);
         }
 
+        /// <summary>
+        /// Upload file in S3 Bucket
+        /// </summary>
+        /// <param name="formFile"></param>
+        /// <returns></returns>
         public async Task<(bool, bool)> UploadFileAsync(IFormFile formFile)
         {
             bool isSaveSuccess = false;
@@ -127,6 +141,11 @@ namespace AITechnothon_ProblemStatement9.Repository
             }
         }
 
+        /// <summary>
+        /// Delete file from s3 bucket
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         public async Task<bool> DeleteFileAsync(string fileName)
         {
             var response = await client.DeleteObjectAsync(bucketName, fileName);
@@ -137,6 +156,11 @@ namespace AITechnothon_ProblemStatement9.Repository
             else { return false; }
         }
 
+        /// <summary>
+        /// Upload file in project directory
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         private async Task UploadFile(IFormFile file)
         {
             string filePath = Path.Combine(uploadfilePath, file.FileName);
@@ -146,6 +170,10 @@ namespace AITechnothon_ProblemStatement9.Repository
             }
         }
 
+        /// <summary>
+        /// Delete file from project directory
+        /// </summary>
+        /// <param name="file"></param>
         private void DeleteFile(string file)
         {
             string filePath = Path.Combine(uploadfilePath, file);

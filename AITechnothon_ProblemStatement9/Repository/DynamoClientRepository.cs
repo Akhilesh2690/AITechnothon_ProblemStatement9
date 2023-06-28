@@ -3,7 +3,6 @@ using AITechnothon_ProblemStatement9.Models;
 using AITechnothon_ProblemStatement9.Options;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
-using Amazon.S3;
 using Microsoft.Extensions.Options;
 
 namespace AITechnothon_ProblemStatement9.Repository
@@ -19,7 +18,16 @@ namespace AITechnothon_ProblemStatement9.Repository
             _appDetailsOptions = appDetailsOptions.Value;
         }
 
-        public async Task<List<DocumentDetails>> GetDocumentDetails(int documentId = 0, int applicationId = 0, int clientId = 0, string documentName = "" , bool isSearchByFileNameContains = false)
+        /// <summary>
+        /// Get document details
+        /// </summary>
+        /// <param name="documentId"></param>
+        /// <param name="applicationId"></param>
+        /// <param name="clientId"></param>
+        /// <param name="documentName"></param>
+        /// <param name="isSearchByFileNameContains"></param>
+        /// <returns></returns>
+        public async Task<List<DocumentDetails>> GetDocumentDetails(int documentId = 0, int applicationId = 0, int clientId = 0, string documentName = "", bool isSearchByFileNameContains = false)
         {
             try
             {
@@ -39,7 +47,7 @@ namespace AITechnothon_ProblemStatement9.Repository
 
                 if (!string.IsNullOrEmpty(documentName))
                 {
-                    if(isSearchByFileNameContains)
+                    if (isSearchByFileNameContains)
                     {
                         conditions.Add(new ScanCondition("FileName", ScanOperator.Contains, documentName));
                     }
@@ -62,16 +70,22 @@ namespace AITechnothon_ProblemStatement9.Repository
             }
         }
 
+        /// <summary>
+        /// Save file metadata detail in DynamoDb
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="description"></param>
+        /// <param name="documentId"></param>
+        /// <returns></returns>
         public async Task<(bool, int)> SaveRecordDyanmoDB(string fileName, string description, int documentId = 0)
         {
-           
             bool isRecordInsertedDynamoDB = false;
-            if(documentId == 0)
+            if (documentId == 0)
             {
                 Random rnd = new Random();
                 documentId = rnd.Next();
             }
-            
+
             try
             {
                 DocumentDetails doc = new DocumentDetails()
@@ -81,7 +95,7 @@ namespace AITechnothon_ProblemStatement9.Repository
                     FileName = fileName,
                     CreationDate = DateTime.Now.ToString(),
                     DocumentId = documentId,
-                    Description= description
+                    Description = description
                 };
 
                 await _context.SaveAsync(doc);
