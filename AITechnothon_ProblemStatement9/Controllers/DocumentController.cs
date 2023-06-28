@@ -32,7 +32,7 @@ namespace AITechnothon_ProblemStatement9.Controllers
         /// <param name="description"></param>
         /// <returns></returns>
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFileAsync(IFormFile formFile, string description = "")
+        public async Task<IActionResult> UploadFileAsync([FromForm(Name = "file")] IFormFile formFile, string description = "")
         {
             bool isFileUploaded = false;
             bool isVirusFound = false;
