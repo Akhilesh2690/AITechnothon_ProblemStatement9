@@ -9,7 +9,7 @@ namespace AITechnothon_ProblemStatement9.Mapper
         {
             List<Documents> documents = new List<Documents>();
 
-            foreach(var documentsDetail in documentDetails)
+            foreach (var documentsDetail in documentDetails)
             {
                 var document = new Documents
                 {

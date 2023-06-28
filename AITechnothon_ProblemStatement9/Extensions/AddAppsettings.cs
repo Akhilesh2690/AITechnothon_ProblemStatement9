@@ -4,7 +4,7 @@ namespace AITechnothon_ProblemStatement9.Extensions
 {
     public static class AddAppsettings
     {
-        private const string CopyFromAppDetails= "AppDetails";
+        private const string CopyFromAppDetails = "AppDetails";
         private const string CopyFromAWSDetails = "AwsDetails";
 
         public static IWebHostBuilder AddAppSettings(this IWebHostBuilder builder)
