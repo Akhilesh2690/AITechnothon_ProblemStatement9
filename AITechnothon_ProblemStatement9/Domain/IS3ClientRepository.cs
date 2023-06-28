@@ -9,5 +9,7 @@ namespace AITechnothon_ProblemStatement9.Domain
         Task<(bool, bool)> UploadFileAsync(IFormFile file);
 
         Task<bool> DeleteFileAsync(string fileName);
+
+        string GetPreSignedUrl(string fileName);
     }
 }

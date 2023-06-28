@@ -1,8 +1,10 @@
 using AITechnothon_ProblemStatement9.Domain;
+using AITechnothon_ProblemStatement9.Models;
 using AITechnothon_ProblemStatement9.Options;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
 
 namespace AITechnothon_ProblemStatement9.Controllers
 {
@@ -13,12 +15,15 @@ namespace AITechnothon_ProblemStatement9.Controllers
         private readonly IS3ClientRepository _s3ClientRepository;
         private readonly IDynamoClientRepository _dynamoClientRepository;
         private readonly AppDetailsOptions _appDetailsOptions;
+        private readonly IDocumentMapper _documentMapper;
 
-        public DocumentController(IS3ClientRepository s3ClientRepository, IDynamoClientRepository dynamoClientRepository, IOptions<AppDetailsOptions> appDetailsOptions)
+        public DocumentController(IS3ClientRepository s3ClientRepository, IDynamoClientRepository dynamoClientRepository, 
+            IOptions<AppDetailsOptions> appDetailsOptions, IDocumentMapper documentMapper)
         {
             _s3ClientRepository = s3ClientRepository;
             _dynamoClientRepository = dynamoClientRepository;
             _appDetailsOptions = appDetailsOptions.Value;
+            _documentMapper = documentMapper;
         }
 
         [HttpPost("upload")]
@@ -28,6 +33,7 @@ namespace AITechnothon_ProblemStatement9.Controllers
             bool isVirusFound = false;
             var isRecordInsertedDynamoDB = false;
             int docId = 0;
+
             if (formFile?.FileName != null)
             {
                 (isFileUploaded, isVirusFound) = await _s3ClientRepository.UploadFileAsync(formFile);
@@ -102,16 +108,23 @@ namespace AITechnothon_ProblemStatement9.Controllers
         {
             try
             {
-                var documents = await _dynamoClientRepository.GetDocumentDetails(0, applicationId, clientId, documentName, true);
+                var documentDetails = await _dynamoClientRepository.GetDocumentDetails(0, applicationId, clientId, documentName, true);
 
-                if (documents?.Count == 0)
+                if (documentDetails?.Count == 0)
                     return NotFound();
+
+                List<Documents> documents = new List<Documents>();
+                if (documentDetails != null)
+                {
+                     documents = _documentMapper.MapDocuments(documentDetails);
+                     documents.ForEach(x => x.FileURL = _s3ClientRepository.GetPreSignedUrl(x?.FileName));
+                }
                 return Ok(documents);
             }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    $"Error occured whlile fetching metadata from DynamoDB for applicationId {applicationId}," +
+                    $"Error occured whlile fetching documentfor applicationId {applicationId}," +
                     $" clientId {clientId} and documentname {documentName} : {ex.Message}");
             }
         }

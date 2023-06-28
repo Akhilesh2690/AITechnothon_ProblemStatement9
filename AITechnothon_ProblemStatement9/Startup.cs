@@ -1,4 +1,5 @@
 ﻿using AITechnothon_ProblemStatement9.Domain;
+using AITechnothon_ProblemStatement9.Mapper;
 using AITechnothon_ProblemStatement9.Repository;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
@@ -47,6 +48,7 @@ namespace AITechnothon_ProblemStatement9
             services.AddScoped<IS3ClientRepository, S3ClientRepository>();
             services.AddScoped<IDynamoClientRepository, DynamoClientRepository>();
             services.AddScoped<IFileScanner, FileScanner>();
+            services.AddScoped<IDocumentMapper, DocumentMapper>();
         }
 
         public void Configure(IApplicationBuilder app, IHostEnvironment env)

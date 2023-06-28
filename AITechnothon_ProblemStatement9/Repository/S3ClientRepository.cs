@@ -7,6 +7,7 @@ using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Amazon.S3.Util;
 using AntiVirus;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace AITechnothon_ProblemStatement9.Repository
@@ -59,6 +60,18 @@ namespace AITechnothon_ProblemStatement9.Repository
                 Console.WriteLine("Exception occured in S3ClientRepository.GetS3ClientDocument: " + ex.Message);
                 throw;
             }
+        }
+
+        public string GetPreSignedUrl(string fileName)
+        {
+            GetPreSignedUrlRequest preSignedUrlRequest = new GetPreSignedUrlRequest
+            {
+                BucketName = bucketName,
+                Key = fileName,
+                Expires = DateTime.UtcNow.AddDays(1)
+            };
+
+           return client.GetPreSignedURL(preSignedUrlRequest);
         }
 
         public async Task<(bool, bool)> UploadFileAsync(IFormFile formFile)
